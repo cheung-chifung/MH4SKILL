@@ -1,7 +1,24 @@
 <html>
     <head>
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+        <script src="javascript/jquery.csv-0.71.min.js"></script>
+        <script>
+        $( function() {
+            $.ajax( {
+                url: 'https://raw.github.com/keekun/MH4SKILL/master/data/UTF8_MH4CHARM.csv.txt',
+                type: 'GET',
+                dataType: 'text',
+                success: function( data ) {
+                    console.log(data);
+                },
+                error: function( data ) {
+                }
+            });
+        });
+        </script>
     </head>
     <body>
     </body>
 </html>
+
+

@@ -3,18 +3,80 @@
         <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
         <script src="javascript/jquery.csv-0.71.min.js"></script>
         <script>
+				var DB_NAME = "MH4SKILLDB";
+				var DB_DESC = "MH4 SKILL Simulator Database";
+				var globalDB = null;
+				function GetDatabase() {
+					if (globalDB == null) {
+						globalDB = openDatabase(DB_NAME, "", DB_DESC,  5*1024);
+					}
+					return globalDB;
+				}
+				function InitDatabase() {
+					var db = GetDatabase();
+					db.transaction(
+						function(tr) {
+						tr.executeSql("DROP TABLE IF EXISTS MH4EQUIP");
+						tr.executeSql("DROP TABLE IF EXISTS MH4SKILL");
+						tr.executeSql("DROP TABLE IF EXISTS MH4DECO");
+						tr.executeSql("CREATE TABLE MH4EQUIP (part, name, gender, type, rarity, slot, got_guild, got_village, min_def, max_def, def_fire, def_water, def_thunder, def_ice, def_dragon, skill_1, skill_v_1, skill_2, skill_v_2, skill_3, skill_v_3, skill_4, skill_v_4, skill_5, skill_v_5, mat_1, mat_v_1, mat_2, mat_v_2, mat_3, mat_v_3, mat_4, mat_v_4)");
+						tr.executeSql("CREATE TABLE MH4SKILL (name, skill, point, type )");
+						tr.executeSql("CREATE TABLE MH4DECO (name, rarity, slot, got_guild, got_village, skill_1, skill_v_1, skill_2, skill_v_2, mat_a1, mat_v_a1, mat_a2, mat_v_a2, mat_a3, mat_v_a3, mat_a4, mat_v_a4,  mat_b1, mat_v_b1, mat_b2, mat_v_b2, mat_b3, mat_v_b3, mat_b4, mat_v_b4)");
+					});
+				}
+
+				function DownloadToTable(url, table_name, field_count, proc_func) {
+						var db = GetDatabase();
+						$.ajax({
+							type: "GET",
+							url: url,
+							dataType: "text",
+							success: function(msg){
+								var arr = msg.split(/\r\n|\r|\n/);
+								var vstr = "?";
+								for(i = 1; i<field_count; i++) vstr = vstr + ",?";
+								db.transaction(
+									function(tr) {
+										for (i = 1; i < arr.length; i++) {
+											if (arr[i] == "") continue;
+											var items;
+											if (proc_func != null) items = proc_func(arr[i]);
+											else items = arr[i].split(/,/);
+											tr.executeSql("INSERT INTO " + table_name + " VALUES ( " + vstr + " )", items );
+										}
+									}
+								);
+							}
+						});
+				}
+
+				function DownloadData() {
+					// Download Equips
+					var parts = new Array("HEAD", "BODY", "ARM", "WST", "LEG");
+					for (var i = 0; i < parts.length; i++) {
+						var url = "../data/UTF8_MH4EQUIP_" + parts[i] + ".csv.txt";
+						DownloadToTable(url, "MH4EQUIP", 33, function(data){
+							var items = data.split(/,/);
+							items.unshift(i);
+							return items;
+						});
+					}
+					// Download Deco 
+					DownloadToTable("../data/UTF8_MH4DECO.csv.txt", "MH4DECO", 25, null);
+					DownloadToTable("../data/UTF8_MH4SKILL.csv.txt", "MH4SKILL", 4, null);
+				}
         $( function() {
-            $.ajax( {
-                //url: 'https://raw.github.com/keekun/MH4SKILL/master/data/UTF8_MH4CHARM.csv.txt',
-                url: '../data/UTF8_MH4CHARM.csv.txt',
-                type: 'GET',
-                dataType: 'text',
-                success: function( data ) {
-                    console.log(data);
-                },
-                error: function( data ) {
-                }
-            });
+						var db = GetDatabase();
+						InitDatabase();
+						DownloadData();
+						/*
+						db.transaction(function(tr){
+							tr.executeSql('SELECT name FROM MH4EQUIP', [], function (tr, results) {
+							for (i = 0; i < results.rows.length; i++){
+								console.log(results.rows.item(i));
+							 }});
+						});
+						*/
         });
         </script>
     </head>
